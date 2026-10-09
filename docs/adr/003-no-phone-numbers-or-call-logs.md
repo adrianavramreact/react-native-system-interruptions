@@ -12,7 +12,7 @@ The `call` event only needs to know that a call is ringing, connected or ended. 
 
 ## Decision
 
-The module never reads phone numbers, contacts or call logs, and never requests `READ_CALL_LOG` or `READ_CONTACTS`. `READ_PHONE_STATE` stays opt-in through the Expo config plugin.
+The module never reads phone numbers, contacts or call logs, and never requests `READ_CALL_LOG` or `READ_CONTACTS`. `READ_PHONE_STATE` is not requested in the first release (ADR-002).
 
 ## Consequences
 
