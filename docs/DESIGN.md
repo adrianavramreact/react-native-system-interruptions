@@ -5,11 +5,15 @@
 ## Public API
 
 ```ts
-// One listener per event; returns an unsubscribe function.
-addListener('call', (e: CallEvent) => void): () => void
-addListener('audioInterruption', (e: AudioInterruptionEvent) => void): () => void
-addListener('audioRoute', (e: AudioRouteEvent) => void): () => void
-addListener('otherAudio', (e: OtherAudioEvent) => void): () => void
+// Native observers run only between these calls; no events are sent before start.
+startObservingAsync(): Promise<void>
+stopObservingAsync(): Promise<void>
+
+// One listener per event; call .remove() on the returned subscription to unsubscribe.
+addListener('call', (e: CallEvent) => void): EventSubscription
+addListener('audioInterruption', (e: AudioInterruptionEvent) => void): EventSubscription
+addListener('audioRoute', (e: AudioRouteEvent) => void): EventSubscription
+addListener('otherAudio', (e: OtherAudioEvent) => void): EventSubscription
 
 // Current state, for the moment a screen mounts (listeners never send an initial value).
 isInCallAsync(): Promise<boolean>
