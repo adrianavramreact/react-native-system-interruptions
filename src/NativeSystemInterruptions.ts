@@ -6,13 +6,13 @@ import {
 
 export type AudioRoute = 'bluetooth' | 'wired' | 'speaker';
 
-export type CallEvent = { state: 'ringing' | 'connected' | 'ended' };
+export type CallEvent = 'ringing' | 'connected' | 'ended';
 export type AudioInterruptionEvent = {
   state: 'began' | 'ended';
   shouldResume?: boolean;
 };
 export type AudioRouteEvent = { route: AudioRoute };
-export type OtherAudioEvent = { state: 'started' | 'stopped' };
+export type OtherAudioEvent = 'started' | 'stopped';
 
 export interface Spec extends TurboModule {
   startObservingAsync(): Promise<void>;
@@ -20,6 +20,7 @@ export interface Spec extends TurboModule {
 
   isInCallAsync(): Promise<boolean>;
   getAudioRouteAsync(): Promise<AudioRoute>;
+  isOtherAudioPlayingAsync(): Promise<boolean>;
 
   readonly onCall: CodegenTypes.EventEmitter<CallEvent>;
   readonly onAudioInterruption: CodegenTypes.EventEmitter<AudioInterruptionEvent>;

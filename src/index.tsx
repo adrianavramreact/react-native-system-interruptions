@@ -47,5 +47,6 @@ export default {
   stopObservingAsync: SystemInterruptions.stopObservingAsync,
   isInCallAsync: SystemInterruptions.isInCallAsync,
   getAudioRouteAsync: SystemInterruptions.getAudioRouteAsync,
+  isOtherAudioPlayingAsync: SystemInterruptions.isOtherAudioPlayingAsync,
   addListener,
 };

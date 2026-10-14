@@ -18,6 +18,7 @@ addListener('otherAudio', (e: OtherAudioEvent) => void): EventSubscription
 // Current state, for the moment a screen mounts (listeners never send an initial value).
 isInCallAsync(): Promise<boolean>
 getAudioRouteAsync(): Promise<AudioRoute>
+isOtherAudioPlayingAsync(): Promise<boolean>
 
 // React hook built on the above; cleans up on unmount.
 useSystemInterruptions(): {
@@ -31,10 +32,10 @@ useSystemInterruptions(): {
 
 | Event | Payload | iOS source | Android source |
 |---|---|---|---|
-| `call` | `{ state: 'ringing' \| 'connected' \| 'ended' }` | `CXCallObserver` | `AudioManager` mode: `RINGTONE` → ringing, `IN_CALL` / `IN_COMMUNICATION` → connected, back to `NORMAL` → ended |
+| `call` | `'ringing' \| 'connected' \| 'ended'` | `CXCallObserver` | `AudioManager` mode: `RINGTONE` → ringing, `IN_CALL` / `IN_COMMUNICATION` → connected, back to `NORMAL` → ended |
 | `audioInterruption` | `{ state: 'began' \| 'ended', shouldResume?: boolean }` | `AVAudioSession.interruptionNotification` | not emitted |
 | `audioRoute` | `{ route: 'bluetooth' \| 'wired' \| 'speaker' }` | `AVAudioSession.routeChangeNotification` | `AudioDeviceCallback` |
-| `otherAudio` | `{ state: 'started' \| 'stopped' }` | `AVAudioSession.isOtherAudioPlaying`, foreground only | `AudioPlaybackCallback` |
+| `otherAudio` | `'started' \| 'stopped'` | `AVAudioSession.isOtherAudioPlaying`, foreground only | `AudioPlaybackCallback` |
 
 Rules shared by all events:
 - An event is sent **only when the normalized value changes**. Native callbacks fire many times for one user action (the spike saw 7 callbacks for one YouTube resume of a 10+ hour video), so the native side keeps the last value and drops repeats.
@@ -44,7 +45,15 @@ Rules shared by all events:
 
 - The **audio mode** is the primary source. In the spike it was correct for GSM (`RINGTONE` → `IN_CALL` → `NORMAL`) and for WhatsApp/Discord (`RINGTONE` → `IN_COMMUNICATION` → `NORMAL`).
 - Active players are **not** used for `call`. The end-of-call tone is a short `VOICE_COMMUNICATION` player that appears *after* hang-up. One VoIP call can create several players (WhatsApp: ringtone, voice, short sounds).
-- Mode listener (`addOnModeChangedListener`) needs API 31. On API 26–30 only the current mode can be read.
+- Mode listener (`addOnModeChangedListener`) needs API 31. Below API 31 no `call` events are sent; `isInCallAsync()` rejects with `ERR_UNSUPPORTED`.
+
+### Android: API levels
+
+| API | `otherAudio` events | `call` events | `isOtherAudioPlayingAsync()` |
+|---|---|---|---|
+| 31+ | supported | supported | supported |
+| 26–30 | supported | unsupported | supported |
+| 24–25 | unsupported | unsupported | unsupported |
 
 ### Android: `otherAudio`
 
@@ -73,4 +82,3 @@ Otherwise `stopped`. Notifications and UI sounds (`SONIFICATION`) are ignored.
 ## Open questions
 
 - Should `call` expose `kind: 'cellular' | 'voip'`? Android can tell from the mode (`IN_CALL` vs `IN_COMMUNICATION`); iOS `CXCall` cannot.
-- API 26–30: poll `getMode()`, fall back to players for `call`, or document "no live `call` updates" in `LIMITATIONS.md`?
