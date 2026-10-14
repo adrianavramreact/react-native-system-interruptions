@@ -38,6 +38,7 @@
     "typecheck": "tsc",
     "lint": "eslint \"**/*.{js,ts,tsx}\"",
     "test": "jest",
+    "test:android": "cd example/android && ./gradlew :react-native-system-interruptions:testDebugUnitTest",
     "release": "release-it --only-version"
   },
   "keywords": [

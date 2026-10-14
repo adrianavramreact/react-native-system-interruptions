@@ -1,5 +1,4 @@
 package com.systeminterruptions
-import android.media.AudioAttributes
 import android.media.AudioManager
 import android.media.AudioPlaybackConfiguration
 import android.os.Build
@@ -26,20 +25,11 @@ class SystemInterruptionsModule(reactContext: ReactApplicationContext) :
 
   @RequiresApi(Build.VERSION_CODES.O)
   private fun onPlayersChanged(configs: List<AudioPlaybackConfiguration>) {
-    val otherAudio = configs.any { isOtherAudio(it.audioAttributes) }
+    val otherAudio = configs.any { isOtherAudio(it.audioAttributes.usage, it.audioAttributes.contentType) }
     if (otherAudio != lastOtherAudio) {
       lastOtherAudio = otherAudio
       emitOnOtherAudio(if (otherAudio) "started" else "stopped")
     }
-  }
-
-  // TODO: handle screening and redirect modes. For now they are ignored, so NORMAL after them is not reported as "ended".
-  private fun callFromMode(mode: Int): String? = when (mode) {
-    AudioManager.MODE_RINGTONE -> "ringing"
-    AudioManager.MODE_IN_CALL,
-    AudioManager.MODE_IN_COMMUNICATION -> "connected"
-    AudioManager.MODE_NORMAL -> "none"
-    else -> null
   }
 
   private fun onModeChanged(mode: Int) {
@@ -56,7 +46,7 @@ class SystemInterruptionsModule(reactContext: ReactApplicationContext) :
     audioManager = reactApplicationContext.getSystemService(AudioManager::class.java)
     try {
       audioManager.registerAudioPlaybackCallback(playbackCallback, null)
-      lastOtherAudio = audioManager.activePlaybackConfigurations.any { isOtherAudio(it.audioAttributes) }
+      lastOtherAudio = audioManager.activePlaybackConfigurations.any { isOtherAudio(it.audioAttributes.usage, it.audioAttributes.contentType) }
       lastCall = callFromMode(audioManager.mode) ?: "none"
       if (Build.VERSION.SDK_INT >= 31) {
         val listener = AudioManager.OnModeChangedListener { mode ->
@@ -117,22 +107,11 @@ class SystemInterruptionsModule(reactContext: ReactApplicationContext) :
         return
       }
       val am = reactApplicationContext.getSystemService(AudioManager::class.java)
-      promise.resolve(am.activePlaybackConfigurations.any { isOtherAudio(it.audioAttributes) })
+      promise.resolve(am.activePlaybackConfigurations.any { isOtherAudio(it.audioAttributes.usage, it.audioAttributes.contentType) })
     } catch (e: Exception) {
       promise.reject("ERR_IS_OTHER_AUDIO_PLAYING", e)
     }
   }
-  private fun isOtherAudio(attrs: AudioAttributes): Boolean {
-    if (attrs.usage == AudioAttributes.USAGE_VOICE_COMMUNICATION) return false
-    return when (attrs.contentType) {
-      AudioAttributes.CONTENT_TYPE_MUSIC,
-      AudioAttributes.CONTENT_TYPE_MOVIE,
-      AudioAttributes.CONTENT_TYPE_SPEECH -> true
-      AudioAttributes.CONTENT_TYPE_UNKNOWN -> attrs.usage == AudioAttributes.USAGE_MEDIA
-      else -> false
-    }
-  }
-
   companion object {
     const val NAME = NativeSystemInterruptionsSpec.NAME
   }
