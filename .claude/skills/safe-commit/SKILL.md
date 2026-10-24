@@ -10,6 +10,7 @@ Reply briefly, in the user's preferred language. Do nothing irreversible without
 ## 1. Status
 - `git status --short` and `git branch --show-current`.
 - If nothing is staged: show modified/untracked files and ask what to add. Do not use `git add -A` / `git add .` without explicit consent; add files by name.
+- One commit = one logical change. If the staged files mix unrelated changes, say so and suggest splitting.
 
 ## 2. Checks on staged files (`git diff --cached --name-only`)
 Stop and report if you find:
