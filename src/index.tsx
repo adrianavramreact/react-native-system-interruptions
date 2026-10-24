@@ -24,6 +24,12 @@ type EventMap = {
 // Number of active listeners per event. Native observing runs only while it is > 0.
 const counts: Partial<Record<keyof EventMap, number>> = {};
 
+/**
+ * Events are emitted only when the state changes, never for the initial state.
+ * To miss nothing, add the listener first and read the initial state after it
+ * (for example `isInCallAsync()` or `getAudioRouteAsync()`). Reading it before
+ * `addListener` leaves a gap where a change is lost.
+ */
 export function addListener<K extends keyof EventMap>(
   eventName: K,
   listener: (event: EventMap[K]) => void
