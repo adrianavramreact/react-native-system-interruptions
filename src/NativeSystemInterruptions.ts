@@ -15,9 +15,10 @@ export type AudioRouteEvent = { route: AudioRoute };
 export type OtherAudioEvent = 'started' | 'stopped';
 
 export interface Spec extends TurboModule {
-  startObservingAsync(): Promise<void>;
-  stopObservingAsync(): Promise<void>;
+  startObservingAsync(event: string): Promise<void>;
+  stopObservingAsync(event: string): Promise<void>;
 
+  isAvailableAsync(event: string): Promise<boolean>;
   isInCallAsync(): Promise<boolean>;
   getAudioRouteAsync(): Promise<AudioRoute>;
   isOtherAudioPlayingAsync(): Promise<boolean>;

@@ -48,4 +48,22 @@ class AudioRulesTest {
   fun isOtherAudio_notification_isFalse() {
     assertFalse(isOtherAudio(AudioAttributes.USAGE_NOTIFICATION, AudioAttributes.CONTENT_TYPE_SONIFICATION))
   }
+
+  @Test
+  fun isEventSupported_call_needsApi31() {
+    assertTrue(isEventSupported(EVENT_CALL, 31))
+    assertFalse(isEventSupported(EVENT_CALL, 30))
+  }
+
+  @Test
+  fun isEventSupported_otherAudio_needsApi26() {
+    assertTrue(isEventSupported(EVENT_OTHER_AUDIO, 26))
+    assertFalse(isEventSupported(EVENT_OTHER_AUDIO, 25))
+  }
+
+  @Test
+  fun isEventSupported_audioRoute_needsApi23() {
+    assertTrue(isEventSupported(EVENT_AUDIO_ROUTE, 23))
+    assertFalse(isEventSupported(EVENT_AUDIO_ROUTE, 22))
+  }
 }

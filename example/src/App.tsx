@@ -27,18 +27,20 @@ export default function App() {
       setOtherAudioEvents((prev) => [event, ...prev]);
     });
 
-    SystemInterruptions.startObservingAsync().catch((e) =>
-      ToastAndroid.show(`${e.code}: ${e.message}`, ToastAndroid.LONG)
-    );
-
     return () => {
       callSub.remove();
       otherAudioSub.remove();
-      SystemInterruptions.stopObservingAsync().catch((e) => {
-        console.warn('stopObservingAsync failed', e);
-      });
     };
   }, []);
+
+  const checkAvailable = async () => {
+    const call = await SystemInterruptions.isAvailableAsync('call');
+    const otherAudio = await SystemInterruptions.isAvailableAsync('otherAudio');
+    ToastAndroid.show(
+      `call: ${call}, otherAudio: ${otherAudio}`,
+      ToastAndroid.SHORT
+    );
+  };
 
   const checkInCall = () => {
     SystemInterruptions.isInCallAsync()
@@ -62,6 +64,7 @@ export default function App() {
 
   return (
     <View style={styles.container}>
+      <Button title="isAvailable" onPress={checkAvailable} />
       <Button title="isInCall" onPress={checkInCall} />
       <Button title="isOtherAudioPlaying" onPress={checkOtherAudio} />
       <Text style={styles.title}>call</Text>
