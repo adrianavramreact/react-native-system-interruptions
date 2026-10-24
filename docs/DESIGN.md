@@ -5,11 +5,11 @@
 ## Public API
 
 ```ts
-// Native observers run only between these calls; no events are sent before start.
-startObservingAsync(): Promise<void>
-stopObservingAsync(): Promise<void>
+// Whether an event is supported on this device and OS version.
+isAvailableAsync(event): Promise<boolean>
 
-// One listener per event; call .remove() on the returned subscription to unsubscribe.
+// Native observing starts with the first listener of an event and stops when the last one is removed.
+// Call .remove() on the returned subscription to unsubscribe.
 addListener('call', (e: CallEvent) => void): EventSubscription
 addListener('audioInterruption', (e: AudioInterruptionEvent) => void): EventSubscription
 addListener('audioRoute', (e: AudioRouteEvent) => void): EventSubscription
@@ -17,7 +17,7 @@ addListener('otherAudio', (e: OtherAudioEvent) => void): EventSubscription
 
 // Current state, for the moment a screen mounts (listeners never send an initial value).
 isInCallAsync(): Promise<boolean>
-getAudioRouteAsync(): Promise<AudioRoute>
+getAudioRouteAsync(): Promise<AudioRoute[]>
 isOtherAudioPlayingAsync(): Promise<boolean>
 
 // React hook built on the above; cleans up on unmount.
@@ -34,7 +34,7 @@ useSystemInterruptions(): {
 |---|---|---|---|
 | `call` | `'ringing' \| 'connected' \| 'ended'` | `CXCallObserver` | `AudioManager` mode: `RINGTONE` → ringing, `IN_CALL` / `IN_COMMUNICATION` → connected, back to `NORMAL` → ended |
 | `audioInterruption` | `{ state: 'began' \| 'ended', shouldResume?: boolean }` | `AVAudioSession.interruptionNotification` | not emitted |
-| `audioRoute` | `{ route: 'bluetooth' \| 'wired' \| 'speaker' }` | `AVAudioSession.routeChangeNotification` | `AudioDeviceCallback` |
+| `audioRoute` | `{ routes: ('bluetooth' \| 'wired' \| 'speaker')[] }` | `AVAudioSession.routeChangeNotification` | `AudioDeviceCallback` |
 | `otherAudio` | `'started' \| 'stopped'` | `AVAudioSession.isOtherAudioPlaying`, foreground only | `AudioPlaybackCallback` |
 
 Rules shared by all events:
@@ -49,11 +49,11 @@ Rules shared by all events:
 
 ### Android: API levels
 
-| API | `otherAudio` events | `call` events | `isOtherAudioPlayingAsync()` |
-|---|---|---|---|
-| 31+ | supported | supported | supported |
-| 26–30 | supported | unsupported | supported |
-| 24–25 | unsupported | unsupported | unsupported |
+| API | `audioRoute` events | `otherAudio` events | `call` events | `isOtherAudioPlayingAsync()` |
+|---|---|---|---|---|
+| 31+ | supported | supported | supported | supported |
+| 26–30 | supported | supported | unsupported | supported |
+| 24–25 | supported | unsupported | unsupported | unsupported |
 
 ### Android: `otherAudio`
 

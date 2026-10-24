@@ -32,6 +32,8 @@ subscription.remove();
 
 > **Order matters.** Events are emitted only when the state changes, never for the initial state. To miss nothing, add the listener first and read the initial state after it (for example `isInCallAsync()` or `getAudioRouteAsync()`). Reading it before `addListener` leaves a gap where a change is lost.
 
+> **Never interrupts playback.** The module only observes: it never requests audio focus on Android and never activates the audio session on iOS, so it never pauses or ducks any app. Because of this, `audioInterruption` is reported on iOS only.
+
 See [`LIMITATIONS.md`](LIMITATIONS.md) for platform limits.
 
 
