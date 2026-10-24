@@ -1,5 +1,6 @@
 package com.systeminterruptions
 import android.media.AudioAttributes
+import android.media.AudioDeviceInfo
 import android.media.AudioManager
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -65,5 +66,37 @@ class AudioRulesTest {
   fun isEventSupported_audioRoute_needsApi23() {
     assertTrue(isEventSupported(EVENT_AUDIO_ROUTE, 23))
     assertFalse(isEventSupported(EVENT_AUDIO_ROUTE, 22))
+  }
+
+  @Test
+  fun routeFromDeviceType_bleSpeaker_isBluetooth() {
+    assertEquals("bluetooth", routeFromDeviceType(AudioDeviceInfo.TYPE_BLE_SPEAKER))
+  }
+
+  @Test
+  fun routeFromDeviceType_usbDevice_isWired() {
+    assertEquals("wired", routeFromDeviceType(AudioDeviceInfo.TYPE_USB_DEVICE))
+  }
+
+  @Test
+  fun routeFromDeviceType_hdmi_isIgnored() {
+    assertNull(routeFromDeviceType(AudioDeviceInfo.TYPE_HDMI))
+  }
+
+  @Test
+  fun routesFromDeviceTypes_phoneOnly_isSpeaker() {
+    val types = listOf(AudioDeviceInfo.TYPE_BUILTIN_SPEAKER, AudioDeviceInfo.TYPE_BUILTIN_EARPIECE)
+    assertEquals(listOf("speaker"), routesFromDeviceTypes(types))
+  }
+
+  @Test
+  fun routesFromDeviceTypes_allConnected_returnsAllOnceSorted() {
+    val types = listOf(
+      AudioDeviceInfo.TYPE_WIRED_HEADPHONES,
+      AudioDeviceInfo.TYPE_BUILTIN_SPEAKER,
+      AudioDeviceInfo.TYPE_BLUETOOTH_A2DP,
+      AudioDeviceInfo.TYPE_BLUETOOTH_SCO,
+    )
+    assertEquals(listOf("bluetooth", "speaker", "wired"), routesFromDeviceTypes(types))
   }
 }

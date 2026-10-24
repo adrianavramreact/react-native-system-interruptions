@@ -1,5 +1,7 @@
 package com.systeminterruptions
+import android.annotation.SuppressLint
 import android.media.AudioAttributes
+import android.media.AudioDeviceInfo
 import android.media.AudioManager
 import android.os.Build
 
@@ -23,6 +25,32 @@ internal fun callFromMode(mode: Int): String? = when (mode) {
   AudioManager.MODE_NORMAL -> "none"
   else -> null
 }
+
+// Newer TYPE_* constants are plain ints; on older devices they simply never match.
+// Only bluetooth, wired and speaker; other types are not reported.
+@SuppressLint("InlinedApi")
+internal fun routeFromDeviceType(type: Int): String? = when (type) {
+  AudioDeviceInfo.TYPE_BLUETOOTH_A2DP,
+  AudioDeviceInfo.TYPE_BLUETOOTH_SCO,
+  AudioDeviceInfo.TYPE_BLE_HEADSET,
+  AudioDeviceInfo.TYPE_BLE_SPEAKER,
+  AudioDeviceInfo.TYPE_HEARING_AID -> "bluetooth"
+  AudioDeviceInfo.TYPE_WIRED_HEADSET,
+  AudioDeviceInfo.TYPE_WIRED_HEADPHONES,
+  AudioDeviceInfo.TYPE_USB_HEADSET,
+  AudioDeviceInfo.TYPE_USB_DEVICE,
+  AudioDeviceInfo.TYPE_USB_ACCESSORY,
+  AudioDeviceInfo.TYPE_LINE_ANALOG,
+  AudioDeviceInfo.TYPE_LINE_DIGITAL,
+  AudioDeviceInfo.TYPE_AUX_LINE -> "wired"
+  AudioDeviceInfo.TYPE_BUILTIN_SPEAKER,
+  AudioDeviceInfo.TYPE_BUILTIN_EARPIECE -> "speaker"
+  else -> null
+}
+
+// Sorted so two lists with the same routes are equal when compared.
+internal fun routesFromDeviceTypes(types: List<Int>): List<String> =
+  types.mapNotNull { routeFromDeviceType(it) }.distinct().sorted()
 
 internal fun isOtherAudio(usage: Int, contentType: Int): Boolean {
   if (usage == AudioAttributes.USAGE_VOICE_COMMUNICATION) return false

@@ -11,7 +11,7 @@ export type AudioInterruptionEvent = {
   state: 'began' | 'ended';
   shouldResume?: boolean;
 };
-export type AudioRouteEvent = { route: AudioRoute };
+export type AudioRouteEvent = { routes: AudioRoute[] };
 export type OtherAudioEvent = 'started' | 'stopped';
 
 export interface Spec extends TurboModule {
@@ -20,7 +20,7 @@ export interface Spec extends TurboModule {
 
   isAvailableAsync(event: string): Promise<boolean>;
   isInCallAsync(): Promise<boolean>;
-  getAudioRouteAsync(): Promise<AudioRoute>;
+  getAudioRouteAsync(): Promise<AudioRoute[]>;
   isOtherAudioPlayingAsync(): Promise<boolean>;
 
   readonly onCall: CodegenTypes.EventEmitter<CallEvent>;

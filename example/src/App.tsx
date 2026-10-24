@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import SystemInterruptions, {
   addListener,
+  type AudioRoute,
   type CallEvent,
   type OtherAudioEvent,
 } from 'react-native-system-interruptions';
@@ -18,6 +19,7 @@ export default function App() {
   const [otherAudioEvents, setOtherAudioEvents] = useState<OtherAudioEvent[]>(
     []
   );
+  const [routeEvents, setRouteEvents] = useState<AudioRoute[][]>([]);
 
   useEffect(() => {
     const callSub = addListener('call', (event) => {
@@ -26,10 +28,14 @@ export default function App() {
     const otherAudioSub = addListener('otherAudio', (event) => {
       setOtherAudioEvents((prev) => [event, ...prev]);
     });
+    const routeSub = addListener('audioRoute', ({ routes }) => {
+      setRouteEvents((prev) => [routes, ...prev]);
+    });
 
     return () => {
       callSub.remove();
       otherAudioSub.remove();
+      routeSub.remove();
     };
   }, []);
 
@@ -62,11 +68,25 @@ export default function App() {
       );
   };
 
+  const checkAudioRoute = () => {
+    SystemInterruptions.getAudioRouteAsync()
+      .then((routes) =>
+        ToastAndroid.show(
+          `audioRoute: ${routes.join(', ')}`,
+          ToastAndroid.SHORT
+        )
+      )
+      .catch((e) =>
+        ToastAndroid.show(`${e.code}: ${e.message}`, ToastAndroid.LONG)
+      );
+  };
+
   return (
     <View style={styles.container}>
       <Button title="isAvailable" onPress={checkAvailable} />
       <Button title="isInCall" onPress={checkInCall} />
       <Button title="isOtherAudioPlaying" onPress={checkOtherAudio} />
+      <Button title="getAudioRoute" onPress={checkAudioRoute} />
       <Text style={styles.title}>call</Text>
       <ScrollView style={styles.list}>
         {callEvents.map((e, i) => (
@@ -78,6 +98,13 @@ export default function App() {
       <ScrollView style={styles.list}>
         {otherAudioEvents.map((e, i) => (
           <Text key={i}>{e}</Text>
+        ))}
+      </ScrollView>
+
+      <Text style={styles.title}>audioRoute</Text>
+      <ScrollView style={styles.list}>
+        {routeEvents.map((routes, i) => (
+          <Text key={i}>{routes.join(', ')}</Text>
         ))}
       </ScrollView>
     </View>
