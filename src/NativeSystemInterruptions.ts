@@ -20,7 +20,7 @@ export interface Spec extends TurboModule {
 
   isAvailableAsync(event: string): Promise<boolean>;
   isInCallAsync(): Promise<boolean>;
-  getAudioRouteAsync(): Promise<AudioRoute[]>;
+  getAudioRoutesAsync(): Promise<AudioRoute[]>;
   isOtherAudioPlayingAsync(): Promise<boolean>;
 
   readonly onCall: CodegenTypes.EventEmitter<CallEvent>;

@@ -27,7 +27,7 @@ const counts: Partial<Record<keyof EventMap, number>> = {};
 /**
  * Events are emitted only when the state changes, never for the initial state.
  * To miss nothing, add the listener first and read the initial state after it
- * (for example `isInCallAsync()` or `getAudioRouteAsync()`). Reading it before
+ * (for example `isInCallAsync()` or `getAudioRoutesAsync()`). Reading it before
  * `addListener` leaves a gap where a change is lost.
  */
 export function addListener<K extends keyof EventMap>(
@@ -85,7 +85,7 @@ export default {
   isAvailableAsync: (event: keyof EventMap) =>
     SystemInterruptions.isAvailableAsync(event),
   isInCallAsync: SystemInterruptions.isInCallAsync,
-  getAudioRouteAsync: SystemInterruptions.getAudioRouteAsync,
+  getAudioRoutesAsync: SystemInterruptions.getAudioRoutesAsync,
   isOtherAudioPlayingAsync: SystemInterruptions.isOtherAudioPlayingAsync,
   addListener,
 };

@@ -14,43 +14,50 @@ class SystemInterruptionsModule(reactContext: ReactApplicationContext) :
   private val audioManager by lazy {
     reactApplicationContext.getSystemService(AudioManager::class.java)
   }
+
   private var lastOtherAudio = false
-  private var lastCall = "none"
-  private var modeListener: AudioManager.OnModeChangedListener? = null
-  private var lastRoutes = listOf<String>()
-
-  // Added and removed only report the difference, so both read the full list again.
-  inner class DeviceCallback : AudioDeviceCallback() {
-    override fun onAudioDevicesAdded(addedDevices: Array<AudioDeviceInfo>) {
-      onDevicesChanged()
-    }
-
-    override fun onAudioDevicesRemoved(removedDevices: Array<AudioDeviceInfo>) {
-      onDevicesChanged()
-    }
-  }
-
-  private val deviceCallback = DeviceCallback()
-
-  @RequiresApi(Build.VERSION_CODES.O)
-  inner class PlaybackCallback : AudioManager.AudioPlaybackCallback() {
-    override fun onPlaybackConfigChanged(configs: List<AudioPlaybackConfiguration>) {
-      onPlayersChanged( configs)
-    }
-  }
-
+  // Lazy because AudioPlaybackCallback needs API 26 and minSdk is 24: creating it
+  // with the module would crash on API 24-25. DeviceCallback needs only API 23.
   @delegate:RequiresApi(Build.VERSION_CODES.O)
   private val playbackCallback by lazy {
     PlaybackCallback()
   }
 
+  private var lastCall = "none"
+  private var modeListener: AudioManager.OnModeChangedListener? = null
+
+  private var lastRoutes = listOf<String>()
+  private val deviceCallback = DeviceCallback()
+
+  @RequiresApi(Build.VERSION_CODES.O)
+  inner class PlaybackCallback : AudioManager.AudioPlaybackCallback() {
+    override fun onPlaybackConfigChanged(configs: List<AudioPlaybackConfiguration>) {
+      onPlayersChanged(configs)
+    }
+  }
+
+  @RequiresApi(Build.VERSION_CODES.O)
+  private fun isOtherAudioPlaying(configs: List<AudioPlaybackConfiguration>): Boolean =
+    configs.any { isOtherAudio(it.audioAttributes.usage, it.audioAttributes.contentType) }
+
   @RequiresApi(Build.VERSION_CODES.O)
   private fun onPlayersChanged(configs: List<AudioPlaybackConfiguration>) {
-    val otherAudio = configs.any { isOtherAudio(it.audioAttributes.usage, it.audioAttributes.contentType) }
+    val otherAudio = isOtherAudioPlaying(configs)
     if (otherAudio != lastOtherAudio) {
       lastOtherAudio = otherAudio
       emitOnOtherAudio(if (otherAudio) "started" else "stopped")
     }
+  }
+
+  @RequiresApi(Build.VERSION_CODES.O)
+  private fun startOtherAudio() {
+    audioManager.registerAudioPlaybackCallback(playbackCallback, null)
+    lastOtherAudio = isOtherAudioPlaying(audioManager.activePlaybackConfigurations)
+  }
+
+  @RequiresApi(Build.VERSION_CODES.O)
+  private fun stopOtherAudio() {
+    audioManager.unregisterAudioPlaybackCallback(playbackCallback)
   }
 
   private fun onModeChanged(mode: Int) {
@@ -58,28 +65,6 @@ class SystemInterruptionsModule(reactContext: ReactApplicationContext) :
     if (call == lastCall) return
     lastCall = call
     emitOnCall(if (call == "none") "ended" else call)
-  }
-
-  private fun currentRoutes(): List<String> =
-    routesFromDeviceTypes(audioManager.getDevices(AudioManager.GET_DEVICES_OUTPUTS).map { it.type })
-
-  private fun onDevicesChanged() {
-    val routes = currentRoutes()
-    if (routes == lastRoutes) return
-    lastRoutes = routes
-    val event = Arguments.createMap()
-    event.putArray("routes", Arguments.fromList(routes))
-    emitOnAudioRoute(event)
-  }
-  @RequiresApi(Build.VERSION_CODES.O)
-  private fun startOtherAudio() {
-    audioManager.registerAudioPlaybackCallback(playbackCallback, null)
-    lastOtherAudio = audioManager.activePlaybackConfigurations.any { isOtherAudio(it.audioAttributes.usage, it.audioAttributes.contentType) }
-  }
-
-  @RequiresApi(Build.VERSION_CODES.O)
-  private fun stopOtherAudio() {
-    audioManager.unregisterAudioPlaybackCallback(playbackCallback)
   }
 
   @RequiresApi(Build.VERSION_CODES.S)
@@ -96,6 +81,29 @@ class SystemInterruptionsModule(reactContext: ReactApplicationContext) :
   private fun stopCall() {
     modeListener?.let { audioManager.removeOnModeChangedListener(it) }
     modeListener = null
+  }
+
+  // Added and removed only report the difference, so both read the full list again.
+  inner class DeviceCallback : AudioDeviceCallback() {
+    override fun onAudioDevicesAdded(addedDevices: Array<AudioDeviceInfo>) {
+      onDevicesChanged()
+    }
+
+    override fun onAudioDevicesRemoved(removedDevices: Array<AudioDeviceInfo>) {
+      onDevicesChanged()
+    }
+  }
+
+  private fun currentRoutes(): List<String> =
+    routesFromDeviceTypes(audioManager.getDevices(AudioManager.GET_DEVICES_OUTPUTS).map { it.type })
+
+  private fun onDevicesChanged() {
+    val routes = currentRoutes()
+    if (routes == lastRoutes) return
+    lastRoutes = routes
+    val event = Arguments.createMap()
+    event.putArray("routes", Arguments.fromList(routes))
+    emitOnAudioRoute(event)
   }
 
   // Save the current list before registering: a change in between still arrives,
@@ -152,35 +160,33 @@ class SystemInterruptionsModule(reactContext: ReactApplicationContext) :
 
   override fun isInCallAsync(promise: Promise) {
     try {
-      val am = reactApplicationContext.getSystemService(AudioManager::class.java)
-      if (Build.VERSION.SDK_INT <31) {
+      if (!isEventSupported(EVENT_CALL, Build.VERSION.SDK_INT)) {
         promise.reject("ERR_UNSUPPORTED", "isInCallAsync requires Android API 31+")
-        return;
+        return
       }
-      promise.resolve(callFromMode(am.mode) == "connected")
-    }catch (e: Exception) {
+      promise.resolve(callFromMode(audioManager.mode) == "connected")
+    } catch (e: Exception) {
       promise.reject("ERR_IS_IN_CALL", e)
-      return
     }
   }
 
   // Only reads; it does not change lastRoutes, so it never affects events.
-  override fun getAudioRouteAsync(promise: Promise) {
+  override fun getAudioRoutesAsync(promise: Promise) {
     try {
       promise.resolve(Arguments.fromList(currentRoutes()))
     } catch (e: Exception) {
-      promise.reject("ERR_GET_AUDIO_ROUTE", e)
+      promise.reject("ERR_GET_AUDIO_ROUTES", e)
     }
   }
 
+  @SuppressLint("NewApi")
   override fun isOtherAudioPlayingAsync(promise: Promise) {
     try {
-      if (Build.VERSION.SDK_INT < 26) {
+      if (!isEventSupported(EVENT_OTHER_AUDIO, Build.VERSION.SDK_INT)) {
         promise.reject("ERR_UNSUPPORTED", "isOtherAudioPlayingAsync requires Android API 26+")
         return
       }
-      val am = reactApplicationContext.getSystemService(AudioManager::class.java)
-        promise.resolve(am.activePlaybackConfigurations.any { isOtherAudio(it.audioAttributes.usage, it.audioAttributes.contentType) })
+      promise.resolve(isOtherAudioPlaying(audioManager.activePlaybackConfigurations))
     } catch (e: Exception) {
       promise.reject("ERR_IS_OTHER_AUDIO_PLAYING", e)
     }

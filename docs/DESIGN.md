@@ -17,7 +17,7 @@ addListener('otherAudio', (e: OtherAudioEvent) => void): EventSubscription
 
 // Current state, for the moment a screen mounts (listeners never send an initial value).
 isInCallAsync(): Promise<boolean>
-getAudioRouteAsync(): Promise<AudioRoute[]>
+getAudioRoutesAsync(): Promise<AudioRoute[]>
 isOtherAudioPlayingAsync(): Promise<boolean>
 
 // React hook built on the above; cleans up on unmount.

@@ -68,11 +68,11 @@ export default function App() {
       );
   };
 
-  const checkAudioRoute = () => {
-    SystemInterruptions.getAudioRouteAsync()
+  const checkAudioRoutes = () => {
+    SystemInterruptions.getAudioRoutesAsync()
       .then((routes) =>
         ToastAndroid.show(
-          `audioRoute: ${routes.join(', ')}`,
+          `audioRoutes: ${routes.join(', ')}`,
           ToastAndroid.SHORT
         )
       )
@@ -86,7 +86,7 @@ export default function App() {
       <Button title="isAvailable" onPress={checkAvailable} />
       <Button title="isInCall" onPress={checkInCall} />
       <Button title="isOtherAudioPlaying" onPress={checkOtherAudio} />
-      <Button title="getAudioRoute" onPress={checkAudioRoute} />
+      <Button title="getAudioRoutes" onPress={checkAudioRoutes} />
       <Text style={styles.title}>call</Text>
       <ScrollView style={styles.list}>
         {callEvents.map((e, i) => (
